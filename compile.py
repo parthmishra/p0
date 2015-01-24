@@ -22,16 +22,16 @@ if debug:
 tempVars=-1 #number of temp variables needed so far
 printCount=0 #number of print statements
 
-# print_stmts = 0
-# temp_counter = -1
+print_stmts = 0
+temp_counter = -1
 
-# def temp_gen(basename):
-# 	global temp_counter
-# 	temp_counter += 1
-# 	return basename + str(temp_counter)
+def temp_gen(basename):
+	global temp_counter
+	temp_counter += 1
+	return basename + str(temp_counter)
 
-# def is_leaf(ast):
-#     return isinstance(ast, Const) or isinstance(ast, Name)
+def is_leaf(ast):
+    return isinstance(ast, Const) or isinstance(ast, Name)
 
 
 def main():
@@ -50,6 +50,8 @@ def main():
 
 	if debug:
 		print "Flat AST = ",str(flatAST)
+
+	# x86ast=instr_select_vars(flatAST)
 
 	x86ast=x86(flatAST)
 
@@ -173,29 +175,212 @@ def flatten(ast):
 	# if debug:
 	# 	print str(flatAST)
 
+# def flatten(ast):
+# 	if isinstance(ast,Module):
+# 		if(print_stmts):
+# 			print 'IN MODULE', Module(ast.doc, flatten(ast.node))
+# 		return Module(ast.doc, flatten(ast.node))
+# 	elif isinstance(ast,Stmt):
+# 		#print 'STMT'
+# 		fnodes = []
+# 		fnodes = map(flatten, ast.nodes)
+# 		#print 'fnodes before sum', fnodes
+# 		fnodes = sum(fnodes, [])
+# 		#print 'fnodes after sum',fnodes
+# 		if(print_stmts):
+# 			print 'IN STMT',Stmt(fnodes)
+# 		return Stmt(fnodes)
+# 	elif isinstance(ast, Printnl):
+# 		nodes = map(flatten, ast.nodes)
+# 		prints = []
+# 		for (t,l) in nodes:
+# 			if not is_leaf(t):
+# 				temp = temp_gen('print')
+# 				l.append(Assign([AssName(temp, 'OP_ASSIGN')], t))
+# 				prints.append(Name(temp))
+# 			else:
+# 				prints.append(t)
+# 		stmts = sum([l for (t, l) in nodes], [])
+# 		if(print_stmts):
+# 			print 'IN PRINT STATEMENTS',stmts + [Printnl(prints, ast.dest)]
+# 		return stmts + [Printnl(prints, ast.dest)]
+# 	elif isinstance(ast, Assign):
+# 		fnodes = map(flatten, ast.nodes)
+# 		assigns = [t for (t, l) in fnodes]
+# 		stmts = sum([l for (t, l) in fnodes], [])
+# 		targ_node, targ_stmts = flatten(ast.expr)
+# 		if(print_stmts):
+# 			print 'IN ASSIGN',(stmts + targ_stmts + [Assign(assigns, targ_node)])
+# 		return stmts + targ_stmts + [Assign(assigns, targ_node)]
+# 	elif isinstance(ast, AssName):
+# 		#print 'ASSNAME'
+# 		if(print_stmts):
+# 			print 'IN ASS NAME',(ast, [])
+# 		return (ast,[])
+# 	elif isinstance(ast, Discard):
+# 		#print 'DISCARD'
+# 		expr, stmts = flatten(ast.expr)
+# 		temp = temp_gen("discard")
+# 		stmts.append(Assign([AssName(temp, 'OP_ASSIGN')], expr))
+# 		#expr = Name(temp)
+# 		if(print_stmts):
+# 			print 'IN DISCARD', stmts + [Discard(expr)]
+# 		return stmts
+# 	elif isinstance(ast, Const):
+# 		if(print_stmts):
+# 			print 'IN THE CONST', (ast,[])
+# 		return (ast,[])
+# 	elif isinstance(ast, Name):
+# 		if(print_stmts):
+# 			print 'IN THE NAME', (ast, [])
+# 		return (ast, [])
+# 	elif isinstance(ast, Add):
+# 		#print 'ADD'
+# 		lexpr, lstmts = flatten(ast.left)
+# 		rexpr, rstmts = flatten(ast.right)
+# 		if not is_leaf(lexpr):
+# 			temp = temp_gen("left")
+# 			lstmts.append(Assign([AssName(temp, 'OP_ASSIGN')], lexpr))
+# 			lexpr = Name(temp)
+# 		if not is_leaf(rexpr):
+# 			temp = temp_gen("right")
+# 			rstmts.append(Assign([AssName(temp, 'OP_ASSIGN')], rexpr))
+# 			rexpr = Name(temp)
+# 		if(print_stmts):
+# 			print 'IN THE ADD',(Add((lexpr, rexpr)), lstmts + rstmts)
+# 		return (Add((lexpr, rexpr)), lstmts + rstmts)
+# 	elif isinstance(ast, UnarySub):
+# 		#print 'UNARYSUB'
+# 		expr, stmts = flatten(ast.expr)
+# 		if not is_leaf(expr):
+# 			temp = temp_gen("usub")
+# 			stmts.append(Assign([AssName(temp, 'OP_ASSIGN')], expr))
+# 			expr = Name(temp)
+# 		if(print_stmts):
+# 			print 'IN THE UNARYSUB',(UnarySub(expr), stmts)
+# 		return (UnarySub(expr), stmts)
+# 	elif isinstance(ast, CallFunc):
+# 		#print 'CALLFUNC'
+# 		expr, stmts = flatten(ast.node)
+# 		if not is_leaf(expr):
+# 			temp = temp_gen("func")
+# 			stmts.append(Assign([AssName(temp, 'OP_ASSIGN')], expr))
+# 			expr = Name(temp)
+# 		args_exprs = []
+# 		args_stmts = []
+# 		for arg in ast.args:
+# 			arg_expr, arg_stmts = flatten(arg)
+# 			if not is_leaf(arg_expr):
+# 				temp = temp_gen("arg")
+# 				arg_stmts.append(Assign([AssName(temp, 'OP_ASSIGN')], arg_expr))
+# 				arg_expr = Name(temp)
+# 			args_exprs.append(arg_expr)
+# 			args_stmts = args_stmts + arg_stmts
+# 		if(print_stmts):
+# 			print 'IN THE CALLFUNC', (CallFunc(expr, args_exprs), stmts + args_stmts)
+# 		return (CallFunc(expr, args_exprs), stmts + args_stmts)
+# 	else:
+# 	 	raise Exception('Error in flatten: unrecognized AST node'+ str(ast))
+
+
+
 def x86(ast):
+	global tempVars
+
 	if debug:
 		print ast
 
 	if isinstance(ast,Module):
 		return x86(ast.node)
 
-	if isinstance(ast,Stmt):
+	elif isinstance(ast,Stmt):
 		n=map(x86,ast.nodes)
 		n=sum(n,[])
 		return n
-		# return sum(map(x86, ast.nodes),[])
 
-	if isinstance(ast,Const):
-		return [ast.value]
-		# return ['$'+str(ast.value)]
+	elif isinstance(ast,Printnl):
+		# print "#####Printnl x86 ast.nodes[0]####",x86(ast.nodes[0])
 
-		# return Const86(ast.value)
-		# class Const86(X86Arg):
-		#     def __init__(self, value):
-		#         self.value = value
-		#     def mnemonic(self):
-		#         return '$' + str(self.value)
+		temp=''
+		temp+='pushl '+str(x86(ast.nodes[0]))
+		temp+=','
+		temp+='call print_int_nl'
+		temp+=','
+		temp+='addl $4, %esp'
+		return [temp]
+
+	elif isinstance(ast,Assign):
+		if isinstance(ast.expr,Add):
+
+			tempExprLeft=str(x86(ast.expr.left))
+			tempExprName=str(ast.nodes[0].name)
+			# if tempExprName=='None':
+			# 	tempExprName='ebp'
+			temp='movl '+'%'+tempExprLeft+' %'+tempExprName
+			temp=[temp]
+			
+
+			tempExprRight=str(x86(ast.expr.right))
+			tempExprName=str(ast.nodes[0].name)
+			temp1='addl '+'%'+tempExprRight+' %'+tempExprName
+			temp1=[temp1]
+
+			print 'temp = ',temp
+			print 'temp1 = ',temp1
+			print temp+temp1
+
+			return temp + temp1
+
+		elif isinstance(ast.expr,UnarySub):
+			tempExprLeft=str(x86(ast.expr.expr))
+			tempExprName=str(ast.nodes[0].name)
+			temp='movl '+'%'+tempExprLeft+' %'+tempExprName
+			temp=[temp]
+
+			temp1='negl '+'%'+str(ast.nodes[0].name)
+			temp1=[temp1]
+
+			print 'temp = ',temp
+			print 'temp1 = ',temp1
+			print temp+temp1
+
+			return temp+temp1
+
+
+
+
+# expr_setup = [Move86(instr_select_vars(ast.expr.left), Var(ast.nodes[0].name,-1))]
+# return expr_setup + [Add86(instr_select_vars(ast.expr.right), Var(ast.nodes[0].name,-1))]
+
+
+	elif isinstance(ast,AssName):
+		return []
+
+	elif isinstance(ast,CallFunc):
+		return ['call input']
+
+	elif isinstance(ast,Const):
+		return '$'+str(ast.value)
+
+	elif isinstance(ast,Name):
+		temp=tempVars
+		tempVars-=1
+		return ''+ast.name
+		# return ''+str(ast.name)
+
+	else:
+		print "Error: Instance not in p0"
+
+
+
+# 		# return ['$'+str(ast.value)]
+
+# 		# return Const86(ast.value)
+# 		# class Const86(X86Arg):
+# 		#     def __init__(self, value):
+# 		#         self.value = value
+# 		#     def mnemonic(self):
+# 		#         return '$' + str(self.value)
 	
 
 
