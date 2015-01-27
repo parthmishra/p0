@@ -18,6 +18,8 @@ debug=False
 if debug:
 	print "Debug is on!"
 
+varList=[] #keep track of named variables
+alias=[] #named variables x86 alias
 
 tempVars=0 #number of temp variables needed so far
 tempVars2=0 #max number of temp variables 
@@ -36,19 +38,29 @@ def main():
 	if debug:
 		print str(inputFilePath) #print input path
 		print str(outputFilePath) #print input path
-		print "Parsed AST = ",str(ast) #print parsed ast
+		# print "Parsed AST = ",str(ast) #print parsed ast
 
 	flatAST=flatten(ast)
 
-	if debug:
-		print "Flat AST = ",str(flatAST)
+	# if debug:
+	# 	print "Flat AST = ",str(flatAST)
+	# for item in flatAST:
+	# 	print item
 
 	# x86ast=instr_select_vars(flatAST)
-	tempVars2=tempVars
-	x86ast=x86(flatAST)
+	x=x86(flatAST)
 
-	if debug:
-		print "x86 AST = ",str(x86ast)
+	# print tempVars
+	# print ''
+
+	# for item in x:
+	# 	print item
+	# print ''
+
+	x=pickReg(x)
+
+	# if debug:
+	# 	print "x86 AST = ",str(x86ast)
 
 	finalList=[]
 	finalList.append('.globl main')
@@ -57,7 +69,7 @@ def main():
 	finalList.append('movl %esp, %ebp')
 	finalList.append('subl '+ '$'+str(tempVars2*4)+', ' + '%esp')
 
-	for item in x86ast:
+	for item in x:
 		finalList.append(item)
 
 	# finalList.append('movl $2, -4(%ebp)')
@@ -83,6 +95,8 @@ def main():
 
 def flatten(ast):
 	global tempVars
+	global varList
+
 	if debug:
 		print ast
 
@@ -117,7 +131,7 @@ def flatten(ast):
 			#Check to see if either side has more nodes
 			if not (isinstance(t, Const) or isinstance(t, Name)):
 				tempVars+=1
-				tempName="!!!"+str(tempVars) 
+				tempName="Print!!!"+str(tempVars) 
 				l.append(Assign([AssName(tempName, 'OP_ASSIGN')], t)) #Assign print name to statement value
 				p.append(Name(tempName)) 
 			else:
@@ -133,28 +147,25 @@ def flatten(ast):
 		# print "In flatten,assign:",ass
 		stmts=sum([l for (t,l) in n],[])
 		tn,ts=flatten(ast.expr)
+
+		# print "IN ASSIGN", stmts,ts,[Assign(ass,tn)]
+		# print "IN ASSIGN", stmts,ts,ass
+		# print "IN ASSIGN", stmts,ts,tn
+
 		return stmts+ts+[Assign(ass,tn)]
 
 	elif isinstance(ast,AssName):
-		# print ("IN AssName:"),ast,ast.name,ast.name[:3]
-		# if str(AssName.)
-		temp=str(ast.name)
-		if temp[:3]!="!!!":
-			tempVars+=1
-			temp='!!!'+str(tempVars)
-			ast.name=temp
-		# if ast.name()[:3]!=['!!!']:
-		# 	tempVars+=1
-		# 	ast.name='!!!'+str(tempVars)
+		tempVars+=1
+		ast.name='!!!'+ast.name
 		return (ast,[])
 
 	elif isinstance(ast,Discard):
 		tempVars+=1
-		tempName="!!!"+str(tempVars)
+		tempName="Discard!!!"+str(tempVars)
 		expr,stmts=flatten(ast.expr)
-		stmts.append(expr)
-		# print "EXPR, STMTS =", expr,stmts
-		# stmts.append(Assign([AssName(tempName, 'OP_ASSIGN')], expr))
+		# stmts.append(expr)
+		stmts.append(Assign([AssName(tempName, 'OP_ASSIGN')], expr))
+
 		return stmts #discard doesn't do anything really... no need to return ast
 
 	elif isinstance(ast,Add):
@@ -164,23 +175,23 @@ def flatten(ast):
 		#For left instance
 		if not (isinstance(leftExpr, Const) or isinstance(leftExpr, Name)):
 			tempVars+=1
-			tempName="!!!"+str(tempVars)
+			tempName="AddLeft!!!"+str(tempVars)
 			leftStmts.append(Assign([AssName(tempName, 'OP_ASSIGN')], leftExpr))
 			leftExpr=Name(tempName)
 		#For right instance
 		if not (isinstance(rightExpr, Const) or isinstance(rightExpr, Name)):
 			tempVars+=1
-			tempName="!!!"+str(tempVars)
+			tempName="AddRight!!!"+str(tempVars)
 			rightStmts.append(Assign([AssName(tempName, 'OP_ASSIGN')], rightExpr))
 			rightExpr=Name(tempName)
 		return (Add((leftExpr,rightExpr)),leftStmts+rightStmts)
 
 	elif isinstance(ast,UnarySub):
-		tempVars=tempVars+1
+		# tempVars=tempVars+1
 		expr, stmts = flatten(ast.expr)
 		if not (isinstance(expr, Const) or isinstance(expr, Name)):
 			tempVars+=1
-			tempName="!!!"+str(tempVars)
+			tempName="UnarySub!!!"+str(tempVars)
 			stmts.append(Assign([AssName(tempName, 'OP_ASSIGN')], expr))
 			expr=Name(tempName)
 		return (UnarySub(expr), stmts)
@@ -191,35 +202,21 @@ def flatten(ast):
 		expr,stmts = flatten(ast.node)
 		if not (isinstance(expr, Const) or isinstance(expr, Name)):
 			tempVars+=1
-			tempName="!!!"+str(tempVars)
+			tempName="CallFunc!!!"+str(tempVars)
 			stmts.append(Assign([AssName(tempName, 'OP_ASSIGN')], expr))
 			expr=Name(tempName)
 
-		# args_exprs = []
-		# args_stmts = []
-		# for arg in ast.args:
-		# 	arg_expr, arg_stmts = flatten(arg)
-		# 	if not (isinstance(arg.expr, Const) or isinstance(arg.expr, Name)):
-		# 		tempVars+=1
-		# 		temp = "!!!"+str(tempVars)
-		# 		arg_stmts.append(Assign([AssName(temp, 'OP_ASSIGN')], arg_expr))
-		# 		arg_expr = Name(temp)
-		# 	args_exprs.append(arg_expr)
-		# 	args_stmts = args_stmts + arg_stmts
-
-
-		# return (CallFunc(expr,[]),stmts+[])
-		return (CallFunc(expr, args_exprs), stmts + args_stmts)
+		return (CallFunc(expr,[]),stmts+[])
 
 	elif isinstance(ast,Const):
 		return (ast,[]) #terminal, no need for recursive call
 
 	elif isinstance(ast,Name):
-		temp=str(ast.name)
-		if temp[:3]!="!!!":
-			tempVars+=0
-			temp='!!!'+str(tempVars)
-			ast.name=temp
+		# temp=str(ast.name)
+		# if temp[:3]!="!!!":
+		# 	tempVars+=0
+		# 	temp='!!!'+str(tempVars)
+		ast.name='!!!'+ast.name
 		return (ast,[]) #terminal, no need for recursive call
 
 	else:
@@ -229,6 +226,7 @@ def flatten(ast):
 
 def x86(ast):
 	global tempVars
+
 
 	if debug:
 		print ast
@@ -243,60 +241,36 @@ def x86(ast):
 
 	elif isinstance(ast,Printnl):
 		# print "#####Printnl x86 ast.nodes[0]####",x86(ast.nodes[0])
-		tempExprName=str(ast.nodes[0].name)
-		tempExprName=int(tempExprName[-1:])
-		tempExprName=str(tempExprName*4)
-		tempExprName='-'+tempExprName+'(%ebp)'
+		##First case for printint variables, Second for constants
+		try:
+			tempExprName=str(ast.nodes[0].name)
+		except AttributeError:
+			tempExprName=str(x86(ast.nodes[0]))
+			# print ast
+		# tempExprName=int(tempExprName[-1:])
+		# tempExprName=str(tempExprName*4)
+		# tempExprName='-'+tempExprName+'(%ebp)'
 		temp=[]
 
-		temp.append('pushl '+tempExprName)
+		temp.append('pushl,'+tempExprName)
 		# temp.append(',')
-		temp.append('call print_int_nl')
+		temp.append('call,print_int_nl')
 		# temp+=','
-		temp.append('addl $4, %esp')
+		temp.append('addl,$4,%esp')
 		return temp
 
 	elif isinstance(ast,Assign):
 		if isinstance(ast.expr,Add):
 			temp=[]
 			temp1=[]
-			if isinstance(ast.expr.left,Const):
-				tempExprLeft=str(x86(ast.expr.left))
-				tempExprLeft=int(tempExprLeft[1:])
-				tempExprLeft=str(tempExprLeft)
-				tempExprLeft='$'+tempExprLeft
 
-				tempExprName=str(ast.nodes[0].name)
-				tempExprName=tempExprName.split('!!!',1)
-				tempExprName=int(tempExprName[1])*4
-				tempExprName=str(tempExprName)
-				tempExprName=', -'+tempExprName+'(%ebp)'
+			tempExprLeft=str(x86(ast.expr.left))
+			tempExprNameLeft=str(ast.nodes[0].name)
+			temp.append('movl,'+tempExprLeft+','+tempExprNameLeft)
 
-				temp.append('movl '+tempExprLeft+tempExprName)
-
-				tempExprRight=x86(ast.expr.right)
-				temp1='addl '+tempExprRight+tempExprName
-				temp1=[temp1]
-			elif isinstance(ast.expr.left,Name):
-				tempExprLeft=str(x86(ast.expr.left))
-				tempExprLeft=tempExprLeft.split('!!!',1)
-				tempExprLeft=int(tempExprLeft[1])*4
-				tempExprLeft=str(tempExprLeft)
-				tempExprLeft='-'+tempExprLeft+'(%ebp)'
-				temp.append('movl '+tempExprLeft+', %eax')
-
-				tempExprName=str(ast.nodes[0].name)
-				tempExprName=tempExprName.split('!!!',1)
-				tempExprName=int(tempExprName[1])*4
-				tempExprName=str(tempExprName)
-				tempExprName=', -'+tempExprName+'(%ebp)'
-				
-				temp.append('movl '+'%eax'+tempExprName)
-				print 'in Assign, Add:',tempExprLeft,tempExprName
-				tempExprRight=x86(ast.expr.right)
-
-				temp1='addl '+tempExprRight+tempExprName
-				temp1=[temp1]
+			tempExprRight=x86(ast.expr.right)
+			tempExprNameRight=str(ast.nodes[0].name)
+			temp1.append('addl,'+tempExprRight+','+tempExprNameRight)
 
 			return temp+temp1
 
@@ -304,127 +278,46 @@ def x86(ast):
 		elif isinstance(ast.expr,UnarySub):
 
 			temp=[]
-			temp1=[]
 
-			if isinstance(ast.expr.expr,Name):
-				tempExpr=str(x86(ast.expr.expr))
-				tempExpr=tempExpr.split('!!!',1)
-				tempExpr=int(tempExpr[1])*4
-				tempExpr=str(tempExpr)
-				tempExpr='-'+tempExpr+'(%ebp)'
-				temp.append('movl '+tempExpr+', %eax')
-				temp.append('negl '+'%eax')
-
-				tempExprName=str(ast.nodes[0].name)
-				tempExprName=tempExprName.split('!!!',1)
-				tempExprName=int(tempExprName[1])*4
-				tempExprName=str(tempExprName)
-				tempExprName=', -'+tempExprName+'(%ebp)'
+			tempExpr=str(x86(ast.expr.expr))
+			tempExprName=str(ast.nodes[0].name)
 				
-				temp.append('movl '+'%eax'+tempExprName)
+			temp.append('movl,'+tempExpr+','+tempExprName)
+			temp.append('negl,'+tempExprName)
 				# print 'in Assign, UnarySub:',tempExpr,tempExprName
-
-			elif isinstance(ast.expr.expr,Const):
-				tempExpr=str(x86(ast.expr.expr))
-				tempExpr=int(tempExpr[1:])
-				tempExpr=str(tempExpr)
-				tempExpr='$'+tempExpr
-				
-				temp.append('movl '+tempExpr+', %eax')
-				temp.append('negl '+'%eax')
-
-				tempExprName=str(ast.nodes[0].name)
-				tempExprName=tempExprName.split('!!!',1)
-				tempExprName=int(tempExprName[1])*4
-				tempExprName=str(tempExprName)
-				tempExprName=', -'+tempExprName+'(%ebp)'
-
-				temp.append('movl '+'%eax'+tempExprName)
-				# print 'in Assign, UnarySub, CONST:',tempExpr,tempExprName
-
 
 			return temp
 
 		elif isinstance(ast.expr,CallFunc):
-			tempExpr=x86(ast.expr)
 			temp=[]
+
+			tempExpr=x86(ast.expr)
 			tempExprName=str(ast.nodes[0].name)
 
-			tempExprName=tempExprName.split('!!!',1)
-			tempExprName=int(tempExprName[1])*4
-			# tempExprName=int(tempExprName[-1:])
+			temp.append('movl,%eax,'+tempExprName)
+			# print "In Assign, CallFunc", tempExprName
 
-			tempExprName=str(tempExprName)
-			tempExprName=', -'+tempExprName+'(%ebp)'
-				
-			temp.append('movl '+'%eax'+tempExprName)
-			# print 'tempExpr =', tempExpr
-			# tempExprName=str(ast.nodes[0].name)
-			# temp1='movl '+'%eax, '+'%'+str(ast.nodes[0].name)
-			# temp1=[temp1]
-			# print 'temp1 =',temp1
 			return tempExpr+temp
-			# return tempExpr
 
 		else:
+			temp=[]
+
+			tempExpr=str(x86(ast.expr))
 			tempExprName=str(ast.nodes[0].name)
 
-			tempExprName=tempExprName.split('!!!',1)
-			tempExprName=int(tempExprName[1])*4
-			# tempExprName=int(tempExprName[-1:])
+			temp.append('movl,'+tempExpr+','+tempExprName)
 
-			tempExprName=str(tempExprName)
-			tempExprName=', -'+tempExprName+'(%ebp)'
-			return ['movl '+x86(ast.expr)+tempExprName]
-			# print "HEREHEREHERE", x86(ast.expr)
-			# return ['movl '+x86(ast.expr)+' '+str(ast.nodes[0].name)]
+			# print "TempExprName=",tempExprName
 
-	if isinstance(ast,Add):
-		if isinstance(ast.left,Const):
-			tempExprLeft=x86(ast.left)
-			tempExprName='%eax'
-		elif isinstance(ast.left,Name):
-			# tempExprLeft='%'+x86(ast.left)
-			tempExprLeft=str(x86(ast.left))
+			return temp
 
-			tempExprLeft=tempExprLeft.split('!!!',1)
-			tempExprLeft=int(tempExprLeft[1])*4
-			# tempExprLeft=int(tempExprLeft[-1:])
-
-			tempExprLeft=str(tempExprLeft)
-			tempExprLeft='-'+tempExprLeft+'(%ebp)'
-			# print 'HEREHEREHERE', tempExprLeft
-
-		if isinstance(ast.right,Const):
-			tempExprRight=x86(ast.right)
-			tempExprName='%eax'
-		elif isinstance(ast.right,Name):
-			# tempExprRight='%'+x86(ast.right)
-			# tempExprName=str(x86(ast.right))
-			tempExprRight=str(x86(ast.left))
-
-			tempExprRight=tempExprRight.split('!!!',1)
-			tempExprRight=int(tempExprRight[1])*4
-			# tempExprRight=int(tempExprRight[-1:])
-
-			tempExprRight=str(tempExprRight)
-			tempExprRight='-'+tempExprRight+'(%ebp)'
-
-
-		# print "TER=", tempExprRight
-		temp='movl '+tempExprLeft+', '+tempExprName
-		temp=[temp]
-		temp1='addl '+tempExprRight+', '+tempExprName
-		# print 'In Add:temp = ',temp
-		# print 'In Add:temp1 = ',temp1
-		return temp+[temp1]
-
+	
 
 	elif isinstance(ast,AssName):
 		return []
 
 	elif isinstance(ast,CallFunc):
-		return ['call input']
+		return ['call,input']
 
 	elif isinstance(ast,Const):
 		# l=[]
@@ -434,13 +327,95 @@ def x86(ast):
 		return '$'+str(ast.value)
 
 	elif isinstance(ast,Name):
-		temp=tempVars
-		tempVars-=1
+		# temp=tempVars
+		# tempVars-=1
 		return ''+ast.name
 		# return ''+str(ast.name)
 
 	else:
-		print "!!!!!!!!!!Error: Instance not in p0 (You Shoudn't get here...)!!!!!!!!!!"	
+		print "!!!!!!!!!!Error: Instance not in p0 (You Shoudn't get here...)!!!!!!!!!!"
+
+def pickReg(ast):
+	global tempVars2
+	varArray=[]
+	finalVars=[]
+	finalVarsReg=[]
+	for line in ast:
+		line=line.split(',')
+		# print line[1][:1]
+		if line[0]=='movl' or line[0]=='addl':
+			if line[1] not in varArray:
+				varArray.append(line[1])
+			if line[2] not in varArray:
+				varArray.append(line[2])
+		if line[0]=='negl' or line[0]=='pushl':
+			if line[1] not in varArray:
+				varArray.append(line[1])
+		# print line
+
+	# print varArray
+
+	for item in varArray:
+		# print item
+		if item[:1]!='$':
+			if item[:1]!='%':
+				finalVars.append(item)
+
+	# print finalVars
+
+
+	tempVars2=len(finalVars)
+	for item in finalVars:
+		finalVarsReg.append(str(-finalVars.index(item)*4-4)+"(%ebp)")
+		# print str(-finalVars.index(item)*4-4)+"(%ebp)"
+
+	temp2=[]
+
+	for line in ast:
+		line=line.split(',')
+		if line[1] in finalVars:
+			line[1]=finalVarsReg[finalVars.index(line[1])]
+		try:
+			if line[2] in finalVars:
+				line[2]=finalVarsReg[finalVars.index(line[2])]
+		except IndexError:
+			pass	
+		# print line	
+		temp2.append(line)
+	# print temp2	
+
+	temp3=[]
+
+	for line in temp2:
+		if line[0]=='movl':
+			if line[1][:1]=='$' or line[2][:1]=='$':
+				temp3.append(line[0]+' '+line[1]+', '+line[2])
+			else:
+				temp3.append('movl '+line[1]+', '+'%eax')
+				temp3.append('movl %eax, '+line[2])
+		elif line[0]=='addl':
+			if line[1][:1]=='$' or line[2][:1]=='$':
+				temp3.append(line[0]+' '+line[1]+', '+line[2])
+			else:
+				temp3.append('movl '+line[1]+', '+'%eax')
+				temp3.append('addl %eax, '+line[2])
+		elif line[0]=='negl':
+			temp3.append('movl '+line[1]+', '+'%eax')
+			temp3.append(line[0]+' '+'%eax')
+			temp3.append('movl %eax, '+line[1])
+
+		else:
+			temp3.append(line[0]+' '+line[1])
+
+
+	# for line in temp3:
+	# 	print line
+
+	return temp3
+
+
+
+
 
 
 if __name__ == '__main__':
