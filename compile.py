@@ -2,6 +2,8 @@
 #CSCI 5525
 #P0 compiler
 
+# import ply.yacc as yacc
+
 #Imports
 import sys
 import platform
@@ -53,9 +55,9 @@ def main():
 	# print tempVars
 	# print ''
 
-	# for item in x:
-	# 	print item
-	# print ''
+	for item in x:
+		print item
+	print ''
 
 	x=pickReg(x)
 
@@ -137,11 +139,14 @@ def flatten(ast):
 			else:
 				p.append(t)
 		stmts = sum([l for (t, l) in nodes], [])
+		# print stmts, [Printnl(p, ast.dest)]
 		return stmts + [Printnl(p, ast.dest)]
 
 
 	elif isinstance(ast,Assign):
 		#assign has .nodes .expr
+		#ass is [AssName('!!!y', 'OP_ASSIGN')]
+		#stmts is stuff to left of it
 		n=map(flatten,ast.nodes)
 		ass=[t for (t,l) in n]
 		# print "In flatten,assign:",ass
@@ -163,9 +168,10 @@ def flatten(ast):
 		tempVars+=1
 		tempName="Discard!!!"+str(tempVars)
 		expr,stmts=flatten(ast.expr)
+
 		# stmts.append(expr)
 		stmts.append(Assign([AssName(tempName, 'OP_ASSIGN')], expr))
-
+		# print expr, stmts
 		return stmts #discard doesn't do anything really... no need to return ast
 
 	elif isinstance(ast,Add):
@@ -185,6 +191,13 @@ def flatten(ast):
 			rightStmts.append(Assign([AssName(tempName, 'OP_ASSIGN')], rightExpr))
 			rightExpr=Name(tempName)
 		return (Add((leftExpr,rightExpr)),leftStmts+rightStmts)
+
+		#After class discussiong could have done something like:
+		# (left, assigns_left) = flatten_expr(e.left)
+        # (right, assigns_right) = flatten_expr(e.right)
+		#temp=tempnamegen()
+		#assign=Assign([AssName(temp,'OP_ASSIGN')],Add((left,right)))
+		# return (temp, assigns_left + assigns_right + [assign])
 
 	elif isinstance(ast,UnarySub):
 		# tempVars=tempVars+1
@@ -212,10 +225,7 @@ def flatten(ast):
 		return (ast,[]) #terminal, no need for recursive call
 
 	elif isinstance(ast,Name):
-		# temp=str(ast.name)
-		# if temp[:3]!="!!!":
-		# 	tempVars+=0
-		# 	temp='!!!'+str(tempVars)
+
 		ast.name='!!!'+ast.name
 		return (ast,[]) #terminal, no need for recursive call
 
