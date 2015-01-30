@@ -30,14 +30,24 @@ from compiler.ast import *
 from lexer import reserved
 from lexer import tokens
 
-precedence = (
-    ('left', 'PLUS'),
-    ('right', 'UMINUS'),)
+# precedence = (
+#     ('left', 'PLUS'),
+#     ('right', 'UMINUS'),)
 
+precedence = (
+    ('left', 'PLUS'),)
 
 def p_module(t):
 	'module : statement_list'
-	p[0] = Module(None, Stmt(p[1]))
+	t[0] = Module(None, Stmt(t[1]))
+
+def p_statement_list(t):
+	'statement_list : statementlist statement'
+	t[0] = t[1] + [t[2]]
+
+def p_statement(t):
+	'statement_list : statement'
+	t[0] = [t[1]]
 
 
 #Functions From Book
