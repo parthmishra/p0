@@ -1,4 +1,4 @@
-#Aaron Holt
+#Aaron Holt & Parth Mishra
 #CSCI 5525
 #Homework 2
 #P0 lexer
@@ -16,11 +16,10 @@ t_PRINT = r'print'
 t_INPUT = r'input'
 t_PLUS    = r'\+'
 t_MINUS   = r'-'
-t_EQUALS  = r'='
+t_EQUALS  = r'\='
 t_LPAREN  = r'\('
 t_RPAREN  = r'\)'
 t_NAME    = r'[a-zA-Z_][a-zA-Z0-9_]*'
-
 
 
 #INT newline and error given from book
@@ -46,6 +45,7 @@ def t_error(t):
 	t.lexer.skip(1)
 
 l=lex.lex()
+
 
 # test='''
 # x=7

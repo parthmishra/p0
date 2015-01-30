@@ -1,0 +1,39 @@
+Created by PLY version 3.0 (http://www.dabeaz.com/ply)
+
+Unused terminals:
+
+    RPAREN
+    NAME
+    EQUALS
+    LPAREN
+    INPUT
+    MINUS
+
+Grammar
+
+Rule 1     S' -> module
+Rule 2     module -> statement_list
+Rule 3     statement -> PRINT expression
+Rule 4     expression -> expression PLUS expression
+Rule 5     expression -> INT
+
+Terminals, with rules where they appear
+
+EQUALS               : 
+INPUT                : 
+INT                  : 4
+LPAREN               : 
+MINUS                : 
+NAME                 : 
+PLUS                 : 3
+PRINT                : 2
+RPAREN               : 
+error                : 
+
+Nonterminals, with rules where they appear
+
+expression           : 2 3 3
+module               : 0
+statement            : 
+statement_list       : 1
+
