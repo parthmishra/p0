@@ -6,11 +6,13 @@
 
 #Imports
 import sys
-import platform
-import argparse
+# import platform
+# import argparse
 import compiler
 
 from compiler.ast import *
+# from lexer import *
+from parser1 import parse_file
 # from pyast import *
 # from x86classes import *
 
@@ -33,7 +35,13 @@ printCount=0 #number of print statements
 def main():
 	inputFile = sys.argv[1]	
 	inputFilePath = str(sys.argv[1])	#input path name
-	ast = compiler.parseFile(inputFile) #parsed ast
+
+	##With builtin parser/lexer
+	#ast = compiler.parseFile(inputFile) #parsed ast
+
+	##With my parser/lexer
+	ast=parse_file(inputFile)
+
 	outputFilePath = inputFilePath.split('.')
 	outputFilePath = outputFilePath[0]+str('.s')
 
