@@ -61,11 +61,11 @@ def p_name_equals(t):
 
 def p_parens(t):
 	'expression : LPAREN expression RPAREN'
-	t[0] = (t[2])
+	t[0] = t[2]
 
 def p_name(t):
 	'expression : NAME'
-	t[0]=NAME(t[1])
+	t[0]=Name(t[1])
 
 def p_unarysub(t):
 	'expression : MINUS expression %prec UMINUS'
@@ -73,7 +73,7 @@ def p_unarysub(t):
 
 def p_input(t):
 	'expression : INPUT LPAREN RPAREN'
-	t[0] = CallFunc(Name('input'),[],None,NOne)
+	t[0] = CallFunc(Name('input'),[],None,None)
 
 
 #Functions From Book
@@ -96,7 +96,7 @@ def p_error(t):
 yacc.yacc()
 
 test='''
-7
+input()
 '''
 
 # ast=yacc.parse(test)

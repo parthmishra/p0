@@ -19,8 +19,12 @@ t_MINUS   = r'-'
 t_EQUALS  = r'\='
 t_LPAREN  = r'\('
 t_RPAREN  = r'\)'
-t_NAME    = r'[a-zA-Z_][a-zA-Z0-9_]*'
+# t_NAME    = r'[a-zA-Z_][a-zA-Z0-9_]*'
 
+def t_NAME(t):
+    r'[a-zA-Z][a-zA-Z_0-9]*'
+    t.type = reserved.get(t.value,'NAME')
+    return t
 
 #INT newline and error given from book
 def t_INT(t):

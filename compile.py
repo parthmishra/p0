@@ -16,8 +16,8 @@ from parser1 import parse_file
 # from pyast import *
 # from x86classes import *
 
-# debug=True
-debug=False
+debug=True
+# debug=False
 
 if debug:
 	print "Debug is on!"
@@ -37,7 +37,8 @@ def main():
 	inputFilePath = str(sys.argv[1])	#input path name
 
 	##With builtin parser/lexer
-	#ast = compiler.parseFile(inputFile) #parsed ast
+	# ast = compiler.parseFile(inputFile) #parsed ast
+	# wast = compiler.parseFile(inputFile) #to compare to my new parser
 
 	##With my parser/lexer
 	ast=parse_file(inputFile)
@@ -49,6 +50,7 @@ def main():
 		print str(inputFilePath) #print input path
 		print str(outputFilePath) #print input path
 		# print "Parsed AST = ",str(ast) #print parsed ast
+		# print "Correct AST = ",str(wast)
 
 	flatAST=flatten(ast)
 
