@@ -22,13 +22,9 @@ debug=True
 if debug:
 	print "Debug is on!"
 
-varList=[] #keep track of named variables
-alias=[] #named variables x86 alias
-
 tempVars=0 #number of temp variables needed so far
 tempVars2=0 #max number of temp variables 
 printCount=0 #number of print statements
-
 
 
 
@@ -84,12 +80,6 @@ def main():
 	for item in x:
 		finalList.append(item)
 
-	# finalList.append('movl $2, -4(%ebp)')
-	# finalList.append('pushl -4(%ebp)')
-	# finalList.append('call input')
-	# finalList.append('movl %eax, -4(%ebp)')
-	# finalList.append('addl $4, %esp')
-
 	finalList.append('movl $0, %eax')
 	finalList.append('leave')
 	finalList.append('ret')
@@ -107,7 +97,6 @@ def main():
 
 def flatten(ast):
 	global tempVars
-	global varList
 
 	if debug:
 		print ast
@@ -266,10 +255,6 @@ def x86(ast):
 			tempExprName=str(ast.nodes[0].name)
 		except AttributeError:
 			tempExprName=str(x86(ast.nodes[0]))
-			# print ast
-		# tempExprName=int(tempExprName[-1:])
-		# tempExprName=str(tempExprName*4)
-		# tempExprName='-'+tempExprName+'(%ebp)'
 		temp=[]
 
 		temp.append('pushl,'+tempExprName)
@@ -340,17 +325,10 @@ def x86(ast):
 		return ['call,input']
 
 	elif isinstance(ast,Const):
-		# l=[]
-		# l.append('$'+str(ast.value))
-		# # l.append(ast.value)
-		# return l
 		return '$'+str(ast.value)
 
 	elif isinstance(ast,Name):
-		# temp=tempVars
-		# tempVars-=1
 		return ''+ast.name
-		# return ''+str(ast.name)
 
 	else:
 		print "!!!!!!!!!!Error: Instance not in p0 (You Shoudn't get here...)!!!!!!!!!!"
@@ -427,14 +405,10 @@ def pickReg(ast):
 		else:
 			temp3.append(line[0]+' '+line[1])
 
-
 	# for line in temp3:
 	# 	print line
 
 	return temp3
-
-
-
 
 
 
