@@ -85,6 +85,11 @@ def p_plus_expression(t):
 	'expression : expression PLUS expression'
 	t[0] = Add((t[1], t[3]))
 
+# def p_plus_expression(t):
+# 	'expression : expression MINUS INT'
+# 	t[0] = Add((t[1], UnarySub(t[3])))
+
+
 def p_int_expression(t):
 	'expression : INT'
 	t[0] = Const(t[1])
