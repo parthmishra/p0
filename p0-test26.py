@@ -8,6 +8,7 @@
 # -1
 # print -1
 x = 10
+w=4
 # -x
 # print x
 # print -x
@@ -15,13 +16,13 @@ x = 10
 # print 1 + 3
 # 1 + -5
 # print 1 + -5
-# y = 5
+y = 5
 # print y
 z = 5
 # print z
 a = 15
 # print a
-b =   z + input() + input() + a + x 
+b =  x+y+ z + input() + input() + a + x +y+w
 print b
 # print b
 # c = x + y + --z + 7 + 8 + b

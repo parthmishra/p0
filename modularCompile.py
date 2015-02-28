@@ -23,10 +23,10 @@ ast = compiler.parseFile(inputFile)
 # print preorder(ast)
 # ast=explicate(ast)
 ast = explicateVisit().preorder(ast)
-print ast
+# print ast
 # print ''
-# print PrintASTVisitor2().preorder(ast)
-
+# ast=cc(ast)
+# print ast
 flat=flattenVisit().preorder(ast)
 # print flat
 # ast=select(flat)
@@ -48,8 +48,8 @@ instr = latest
 for item in instr:
 	item.code = RemoveStructuredControl().preorder(item.code)
 
-# for item in instr:
-# 	print PrintVisitor3().preorder(item)
+for item in instr:
+	print PrintVisitor3().preorder(item)
 
 x86 = GenX86Visitor3().preorder(Stmt(instr))
 
