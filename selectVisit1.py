@@ -13,7 +13,7 @@ def make_arith(klass, lhs, rhs):
 def name_or_reg(n):
     return isinstance(n, Name) or isinstance(n, Register)
 
-class InstrSelVisitor(Visitor):
+class SelectVisit1(Visitor):
 
     def __init__(self):
         Visitor.__init__(self)
@@ -39,6 +39,9 @@ class InstrSelVisitor(Visitor):
             return [IntMoveInstr(Register('eax'), [left]),
                     IntAddInstr(Register('eax'), [right]),
                     IntMoveInstr(Name(lhs), [Register('eax')])]
+        # else:
+        #     return make_arith(IntMoveInstr, Name(lhs), left) + \
+        #            make_arith(IntAddInstr, Name(lhs), right)
 
     def visitUnarySub(self, n, lhs):
         return [IntMoveInstr(Register('eax'), [n.expr]),
@@ -56,7 +59,6 @@ class InstrSelVisitor(Visitor):
 
     def visitCallFunc(self, n, lhs):
         push_args = [Push(a) for a in reversed(n.args)]
-        # Align stack to 16-bytes for MacOS X
         align = 4 * (4 - len(n.args) % 4)
         pop_amount = (4 * len(n.args)) + align
         if align != 0:
@@ -74,10 +76,10 @@ class InstrSelVisitor(Visitor):
 
     def visitPrintnl(self, n):
         push_args = [Push(n.nodes[0])]
-        # Align stack to 16-bytes for MacOS X
         if len(push_args) % 4 != 0:
             n = 4 - (len(push_args) % 4)
             for i in range(0,n):
                 push_args = [Push(Const(0))] + push_args 
         pop = [Pop(4 * len(push_args))]
         return push_args + [CallX86('print_int_nl')] + pop
+

@@ -11,8 +11,8 @@ def make_arith(klass, lhs, rhs):
     else:
         return [klass(lhs, [rhs])]
 
-def name_or_reg(n):
-    return isinstance(n, Name) or isinstance(n, Register)
+def name_or_reg(ast):
+    return isinstance(ast, Name) or isinstance(ast, Register)
 
 
 def select(ast):    
@@ -29,7 +29,7 @@ def select(ast):
         #     sss.append(select)
         # sss  = [select(s) for s in ast.nodes]
         sss = map(select, ast.nodes)
-        print "SSSSSSSSSSSS", sss
+        # print "SSSSSSSSSSSS", sss
         return Stmt(reduce(lambda a,b: a + b, sss, []))
 
     elif isinstance(ast,Add):
@@ -40,6 +40,9 @@ def select(ast):
         elif name_or_reg(right) and right.name == lhs:
             return make_arith(IntAddInstr, Name(lhs), left)
         else:
+            #print left
+            #print right
+            #print Name(lhs)
             return [IntMoveInstr(Register('eax'), [left]),
                     IntAddInstr(Register('eax'), [right]),
                     IntMoveInstr(Name(lhs), [Register('eax')])]
@@ -60,7 +63,6 @@ def select(ast):
 
     elif isinstance(ast, CallFunc):
         push_args = [Push(a) for a in reversed(ast.args)]
-        # Align stack to 16-bytes for MacOS X
         align = 4 * (4 - len(ast.args) % 4)
         pop_amount = (4 * len(ast.args)) + align
         if align != 0:
@@ -69,6 +71,9 @@ def select(ast):
             pop = [Pop(pop_amount)]
         else:
             pop = []
+
+        # print push_args
+        #print 'HERERERERERERE CallFunc instr select'
         return push_args + [CallX86(ast.node.name)] + pop \
                + [IntMoveInstr(Name(lhs), [Register('eax')])]
 
@@ -78,7 +83,6 @@ def select(ast):
 
     elif isinstance(ast, Printnl):
         push_args = [Push(ast.nodes[0])]
-        # Align stack to 16-bytes for MacOS X
         if len(push_args) % 4 != 0:
             n = 4 - (len(push_args) % 4)
             for i in range(0,n):

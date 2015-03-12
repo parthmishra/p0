@@ -26,6 +26,7 @@ unspillable = [[]]
 num_colors = 6
 reserved_registers = ['esp']
 registers = ['eax', 'ebx', 'ecx', 'esi', 'edi', 'edx']
+
 real_color = ['blue', 'green', 'cyan', 'orange', \
               'brown', 'forestgreen', 'yellow']
 vars_to_spill = set([])
@@ -85,7 +86,7 @@ def choose_color(v, color, graphs,spill_this_one):
     if debug:
         print 'pick stack location'
 
-    # pick the lowest unused color (this is what Palsberg does)
+    # pick lowest saturation 
     lowest = len(reserved_registers)
     while True:
         if not (lowest in used_colors):
@@ -136,10 +137,7 @@ def color_most_constrained_first(graphs, color):
                 
             if not is_reg(c):
                 spills += 1
-# spills happen to unspillable in hw6! -Jeremy
-# Also, register allocation takes too long on some programs.
-#                 if v in unspillable[0]:
-#                     raise Exception('spilled an unspillable! ' + v)
+
     return color
 spilled = [False]
 
@@ -212,7 +210,6 @@ def color_graph2(g,n,coloring): #should take g (edges) and nodes n and coloring 
             spills += 1
     return coloring
 def color_graph1(g,n,coloring):
-    #this is as close as we come to chaitins method
     #should take g (edges) and nodes n and coloring will be the final coloring
     #Omega is just the something broke command
     global spills, unspillable, num_unused, used_registers
@@ -418,32 +415,14 @@ def color_registers(color,graphs):
                 spills += 1
     return color
 
-def chaitin(graphs,color):
+def colorer(graphs,color):
     global used_registers,num_unused,registers,vars_to_spill,reserved_registers,spills
-    x=1
-    #1 is close to chaitin
-    #2 is an optimization that spilling may not be needed
     for v in graphs.vertices():
         used_registers[v] = set([])
         num_unused[v] = len(registers) - len(used_registers[v])
     color = color_registers(color,graphs)
-    if x ==1:
-         color = color_graph1(graphs,set(graphs.vertices())-set(reserved_registers)-set(registers),color)
-         return color
-    if x==2:
-        vars_to_spill = set([])
-        color = color_graph2(graphs,set(graphs.vertices())-set(reserved_registers)-set(registers),color)
-        for var in vars_to_spill:
-            c = choose_color(var,color,graphs,False)
-            color[var] = c
-            for u in graphs.interferes_with(var):
-                used_registers[u] |= set([c])
-                num_unused[u] = len(registers) - len(used_registers[u])
-                if not is_reg(c):
-                    spills += 1
-        return color
-    
-
+    color = color_graph1(graphs,set(graphs.vertices())-set(reserved_registers)-set(registers),color)
+    return color
 
 
 
@@ -502,7 +481,7 @@ class RegisterAlloc:
             #I think all coloring can happen here by saying color2 = new_method(graphs,color)
             #color = color_most_constrained_first(graphs, color)
             #print 'starting coloring'
-            color = chaitin(graphs,color)
+            color = colorer(graphs,color)
             #print color
             #print 'finished coloring'
 

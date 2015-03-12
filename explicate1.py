@@ -8,8 +8,8 @@ import sys
 import compiler
 import re
 
-
-def gen_is_true(e):
+##Helper functions prof Chang showed us in class that I found useful:
+def is_true(e):
     if True:
         return IfExp(Compare(GetTag(e), [('==', Const(tag['int']))]),
                      Compare(Const(0), [('!=', ProjectTo('int', e))]),
@@ -21,15 +21,13 @@ def gen_is_true(e):
         return CallFunc(Name('is_true'), [e])
 
 
-# the following is overly conservative
-def pure(expr):
+def constOrName(expr):
     return isinstance(expr, Name) or isinstance(expr, Const)
 
 def letify(expr, k):
-    if pure(expr):
+    if constOrName(expr):
         return k(expr)
     else:
-        # n = generate_name('letify')
         n = name_gen('letify_')
         return Let(n, expr, k(Name(n)))
 
@@ -104,12 +102,12 @@ def explicate(ast):
 
 	elif isinstance(ast, Dict):
 		items = [(explicate(k), explicate(v)) for (k, v) in ast.items]
-		dName = name_gen("Dict_")  ##change this
+		dName = name_gen("dict")  ##change this
 		dictElements = Name(dName)
 		for (k, v) in reversed(items):
-			elementName = name_gen("dictElement_")
-			dName = Let(elementName, SetSubscript(Name(dName), k, v), dictElements)
-			return Let(d, InjectFrom('big', CallFunc(Name('create_dict'), [])),dictElements)
+			elementName = name_gen("_")
+			dictElements = Let(elementName, SetSubscript(Name(dName), k, v), dictElements)
+		return Let(dName, InjectFrom('big', CallFunc(Name('create_dict'), [])),dictElements)
 
 	elif isinstance(ast, Subscript):
 		expr = explicate(ast.expr)
@@ -118,23 +116,23 @@ def explicate(ast):
 
 	elif isinstance(ast, And):
 		lExpr = explicate(ast.nodes[0])
-		rExpr = explicate(ast.node[1])
-		return letify(lExpr, lambda l: IfExpr(gen_is_true(l), rExpr, l))
+		rExpr = explicate(ast.nodes[1])
+		return letify(lExpr, lambda l: IfExp(is_true(l), rExpr, l))
 
 	elif isinstance(ast, Or):
 		lExpr = explicate(ast.nodes[0])
-		rExpr = explicate(ast.node[1])
-		return letify(lExpr, lambda l: IfExpr(gen_is_true(l), rExpr))
+		rExpr = explicate(ast.nodes[1])
+		return letify(lExpr, lambda l: IfExp(is_true(l), l, rExpr))
 
 	elif isinstance(ast, IfExp):
 		test = explicate(ast.test)
 		then = explicate(ast.then)
 		else_ = explicate(ast.else_)
-		return IfExp(letify(test, lambda t: gen_is_true(t)), then, else_)
+		return IfExp(letify(test, lambda t: is_true(t)), then, else_)
 
 	elif isinstance(ast, Not):
 		expr = explicate(ast.expr)
-		return InjectFrom('bool', Compare(Const(0), [('==', letify(expr, lambda t: gen_is_true))]))
+		return InjectFrom('bool', Compare(Const(0), [('==', letify(expr, lambda t: is_true(t)))]))
 
 	elif isinstance(ast, Compare):
 		left = explicate(ast.expr)
@@ -175,7 +173,12 @@ def explicate(ast):
 
 
 	elif isinstance(ast, Discard):
-		return Discard(explicate(ast.expr))
+		# print explicate(ast.expr), ast.expr
+		expr1 = explicate(ast.expr)
+		# print "EXPRRRRRR = ",expr1 
+		return Discard(expr1)
+
+	# elif isinstance(ast, None)
 
 	else:
 		print "PANIC IN THE EXPLICATE"

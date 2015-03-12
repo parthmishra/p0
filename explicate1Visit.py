@@ -13,9 +13,9 @@ import re
 
 def gen_is_true(e):
     if True:
-        return IfExp(Compare(GetTag(e), [('==', Const(tag['int']))]),
+        return IfExp(Compare(GetTag(e), [('==', Const(0))]),
                      Compare(Const(0), [('!=', ProjectTo('int', e))]),
-                     IfExp(Compare(GetTag(e), [('==', Const(tag['bool']))]),
+                     IfExp(Compare(GetTag(e), [('==', Const(1))]),
                            Compare(Const(0),
                                    [('!=', ProjectTo('int', e))]),
                            CallFunc(Name('is_true'), [e])))
@@ -23,7 +23,7 @@ def gen_is_true(e):
         return CallFunc(Name('is_true'), [e])
 
 
-# the following is overly conservative
+#Is it a simple expression (const or name...)
 def pure(expr):
     return isinstance(expr, Name) or isinstance(expr, Const)
 
@@ -31,7 +31,6 @@ def letify(expr, k):
     if pure(expr):
         return k(expr)
     else:
-        # n = generate_name('letify')
         n = name_gen('letify_')
         return Let(n, expr, k(Name(n)))
 
@@ -93,7 +92,7 @@ class explicateVisit(Visitor):
 
 	def visitList(self, ast):
 		nodes = map(self.dispatch, ast.nodes)
-		lName = name_gen("listy_")  #########Need to generate a name here...
+		lName = name_gen("listy_")  
 		listElements = Name(lName)
 		ii=len(nodes)-1
 		for nn in reversed(nodes):
@@ -179,6 +178,8 @@ class explicateVisit(Visitor):
 
 
 	def visitDiscard(self, ast):
+		# print self.dispatch(ast.expr)
+		# print ast.expr
 		return Discard(self.dispatch(ast.expr))
 
 

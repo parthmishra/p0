@@ -1,2 +1,2 @@
 x=True
-y=x+1
+y=True+1

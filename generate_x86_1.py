@@ -8,10 +8,8 @@ from visitor86 import Visitor
 # Input: an AST for IR_x86
 # Output: a string containing a program in x86 assembly 
 
-if sys.platform == 'darwin':
-    fun_prefix = '_'
-else:
-    fun_prefix = ''
+
+fun_prefix = ''
 
 class GenX86Visitor(Visitor):
 
@@ -64,10 +62,6 @@ class GenX86Visitor(Visitor):
         return '\taddl %s, %s' % (self.dispatch(n.rhs[0]),\
                                   self.dispatch(n.lhs))
 
-    def visitIntLEAInstr(self, n):
-        return '\tleal (%s, %s), %s' % (self.dispatch(n.rhs[0]),\
-                                        self.dispatch(n.rhs[1]),\
-                                        self.dispatch(n.lhs))
 
     def visitIntSubInstr(self, n):
         return '\tsubl %s, %s' % (self.dispatch(n.rhs[0]),\

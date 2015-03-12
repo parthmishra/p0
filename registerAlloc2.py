@@ -21,12 +21,6 @@ class ModifyLiveVisitor2(ModifyLiveVisitor):
         n.live = then_live | else_live | free_vars(n.tests[0][0])
         return n.live
 
-    def visitWhile(self, n, live):
-        test_free = free_vars(n.test)
-        body_live = self.dispatch(n.body, live | test_free)
-        body_live = self.dispatch(n.body, live | test_free | body_live)
-        n.live = live | test_free | body_live
-        return n.live
 
     def visitStmt(self, n, live):
         for s in reversed(n.nodes):
@@ -73,18 +67,13 @@ class BuildInterferenceVisitor2(BuildInterferenceVisitor):
     def visitIf(self, n):
         self.dispatch(n.tests[0][1])
         self.dispatch(n.else_)
-
-    def visitWhile(self, n):
-        self.dispatch(n.body)
-
+   
 class IntroSpillCode2(IntroSpillCode):
     def visitIf(self, n):
         return [If(tests=[(n.tests[0][0],
                            self.dispatch(n.tests[0][1]))],
                    else_=self.dispatch(n.else_))]
 
-    def visitWhile(self, n):
-        return [While(n.test, self.dispatch(n.body), n.else_)]
 
     def visitCMPLInstr(self, n):
         global spilled
@@ -145,10 +134,6 @@ class AssignRegistersVisitor2(AssignRegistersVisitor):
                            self.dispatch(n.tests[0][1]))],
                    else_=self.dispatch(n.else_))]
 
-    def visitWhile(self, n):
-        return [While(self.dispatch(n.test),
-                      self.dispatch(n.body),
-                      n.else_)]
 
 
 class RegisterAlloc2(RegisterAlloc):

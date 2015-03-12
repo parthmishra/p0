@@ -1,0 +1,14 @@
+graph {
+"esp"[color=blue,label="esp.0"]
+"edi"[color=forestgreen,label="edi.1"]
+"eax"[color=green,label="eax.2"]
+"x"[color=green,label="x.3"]
+"edx"[color=yellow,label="edx.4"]
+"ebx"[color=cyan,label="ebx.5"]
+"tmp0"[color=green,label="tmp0.6"]
+"esi"[color=brown,label="esi.7"]
+"ecx"[color=orange,label="ecx.8"]
+
+
+}
+

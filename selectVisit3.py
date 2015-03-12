@@ -1,7 +1,7 @@
 from ir import *
 from class86 import *
 from ExplicitClass import *
-from selectVisit2 import InstrSelVisitor2, name_or_reg
+from selectVisit2 import SelectVisit2, name_or_reg
 
 callee_saves = ['ebx', 'edx', 'esi', 'edi']
 
@@ -13,8 +13,17 @@ def align_call(push_args):
             push_args = [Push(Const(0))] + push_args 
     return push_args
 
-class InstrSelVisitor3(InstrSelVisitor2):
+class SelectVisit3(SelectVisit2):
+
     def visitModule(self, n):
+        #now need to do liveness/interference on each function individually
+        #Can't just return .doc anymore
+        #bob:
+        #...
+        #fred:
+        #...
+        #main:
+        #...
         if isinstance(n.node, Stmt):
             funs = [self.dispatch(fun) for fun in n.node.nodes if isinstance(fun, Function)]
             rest = [s for s in n.node.nodes if not isinstance(s, Function)]
@@ -22,16 +31,20 @@ class InstrSelVisitor3(InstrSelVisitor2):
                             Stmt(rest + [Return(Const(0))]))
             main = self.dispatch(main)
             return funs + [main]
-        else:
-            raise Exception('in InstrSelVisitor4, expected Stmt inside Module')
+       
 
     def visitReturn(self, n):
+        #After leaving a function pop all the callee saves off of stack to restore
         restore_callee_saves = []
         for r in reversed(callee_saves):
             restore_callee_saves += [PopValue(Register(r))]
         return restore_callee_saves + [n]
 
     def visitFunction(self, n):
+        # print n.code
+        # function has decorator, name, argname, defaults,
+        # flags, doc
+        # inside a function is a statements
         code = self.dispatch(n.code)
         if isinstance(code, Stmt):
             # save the callee-save registers!
@@ -41,32 +54,36 @@ class InstrSelVisitor3(InstrSelVisitor2):
             param_moves = []
             offset = 8
             for param in n.argnames:
+                # print param
                 param_moves += [IntMoveInstr(Name(param), [StackLoc(offset)])]
                 offset += 4
 
             return Function(n.decorators, n.name, n.argnames, n.defaults,
                             n.flags, n.doc, Stmt(push_callee_saves + param_moves + code.nodes))
-        else:
-            raise Exception('in InstrSelVisitor4, expected Stmt inside Function')
+        
 
 
     def visitIf(self, n):
+        #if has tests, else
+        #test in [0][0]
+        #then in [0][1]
+        # else is that silly else_
         test = n.tests[0][0]
         then = self.dispatch(n.tests[0][1])
         return [If([(test,then)], 
                    self.dispatch(n.else_))]
 
-    def visitWhile(self, n):
-        test = n.test
-        body = self.dispatch(n.body)
-        return [While(test, body, n.else_)]
-
-    # Using eax! ('al' is part of 'eax') Must keep eax in reserve!
+    #NOTE: al is part of eax.....   
     def visitCompare(self, n, lhs):
+        #compare has expr, ops
+        # left expr = n.expr
+        # operand is op[0][0]
+        # right is op[0][1]
         left = n.expr
         op = n.ops[0][0]
         right = n.ops[0][1]
         if op == '==' or op == 'is':
+            # print 'HERERERERERERERERE in compare'
             return [CMPLInstr(None, [left, right]),
                     SetIfEqInstr(Register('al')),
                     IntMoveZeroExtendInstr(Name(lhs), [Register('al')])]
