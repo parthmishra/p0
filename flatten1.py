@@ -151,17 +151,7 @@ def flattener(ast, constOrName):
 			else:
 				return (CallFunc(ast.node, args), ss)
 
-		# elif isinstance(ast.node, FunName):
-		# 	args_sss = map(flattener,ast.args)
-		# 	args = [arg for (arg,ss) in args_sss]
-		# 	ss = reduce(lambda a,b: a + b, [ss for (arg,ss) in args_sss], [])
-		# 	if constOrName:
-		# 		tmp = name_gen('CallFunc_')
-		# 		return (Name(tmp), ss + [Assign([AssName(tmp, 'OP_ASSIGN')], CallFunc(ast.node, args))])
-		# 	else:
-		# 		return (CallFunc(ast.node, args), ss)
-		# else:
-		# 	raise Exception('flattener: only calls to named functions allowed')
+		
 		# #Const86 has .node, .args, .star_args, .dstar_args
 		# #For p0 no args required!
 		# (expr,stmts) = flattener(ast.node)
@@ -191,8 +181,8 @@ def flattener(ast, constOrName):
 		(elseExpr, elseStmts) = flattener(ast.else_, True)
 		# (elseExpr) = flattener(ast.else_)
 		# print "HEREHEREHREHRHERHEHRH"
-		# print "flattenerED else_ flattenerED = ",elseExpr
-		# print "22flattenerED else_ flattenerED22 = ",elseStmts
+		# print "flattener else_ flattener = ",elseExpr
+		# print "22flattener else_ flattener22 = ",elseStmts
 
 		tmp = name_gen("IfExp_")
 		return (Name(tmp), testStmts + [If([(testExpr, Stmt(thenStmts + [Assign([AssName(tmp, 'OP_ASSIGN')], \
@@ -243,15 +233,17 @@ def flattener(ast, constOrName):
 		return (Name(tmp), Stmts + [Assign([AssName(tmp, 'OP_ASSIGN')], rExpr)])
 
 	elif isinstance(ast, Let) and constOrName:
+		#Error here: nonetype not iterable...???
 		# print ast.rhs
 		(rExpr, rStmts) = flattener(ast.rhs, False)
 		(bExpr, bStmts) = flattener(ast.body, True)
-		return (bStmts, rStmts + [Assign([AssName(ast.var, 'OP_ASSIGN')], rExpr)] + bStmts)
+		return (bExpr, rStmts + [Assign([AssName(ast.var, 'OP_ASSIGN')], rExpr)] + bStmts)
 
 	elif isinstance(ast, SetSubscript) and constOrName:
+		#container key val
 		(cExpr, cStmts) = flattener(ast.container, True)
 		(kExpr, kStmts) = flattener(ast.key, True)
-		(vExpr, cStmts) = flattener(ast.val, True)
+		(vExpr, vStmts) = flattener(ast.val, True)
 		tmp = name_gen("SetSubscript_")
 		r = SetSubscript(cExpr, kExpr, vExpr)
 		return (Name(tmp), cStmts + kStmts + vStmts + [Assign([AssName(tmp, 'OP_ASSIGN')], r)])
@@ -259,6 +251,7 @@ def flattener(ast, constOrName):
 
 	else:
 		print "Error: Instance not in p0, p1"
+		# return [ast]
 		# print ast
 
 

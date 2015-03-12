@@ -1,24 +1,24 @@
 from compiler.ast import *
-from visitor86 import Visitor
 from ir import *
 from class86 import *
 from ExplicitClass import *
 
-class RemoveStructuredControl(Visitor):
+
+def RemoveStructuredControl(ast):
     #Gets rid of if statements in x86 IR.
 
-    def visitModule(self, n):
-        return Module(n.doc, Stmt(self.dispatch(n.node)))
+    if isinstance(ast, Module):
+        return Module(ast.doc, Stmt(RemoveStructuredControl(ast.node)))
 
-    def visitStmt(self, n):
-        sss = [self.dispatch(s) for s in n.nodes]
+    elif isinstance(ast, Stmt):
+        sss = [RemoveStructuredControl(s) for s in ast.nodes]
         return Stmt(reduce(lambda a,b: a + b, sss, []))
 
-    def visitIf(self, n):
+    elif isinstance(ast, If):
         # if has tests[0][0], tests[0][1], else_
-        test = n.tests[0][0]
-        then = self.dispatch(n.tests[0][1])
-        else_ = self.dispatch(n.else_)
+        test = ast.tests[0][0]
+        then = RemoveStructuredControl(ast.tests[0][1])
+        else_ = RemoveStructuredControl(ast.else_)
         else_label = name_gen('else')
         end_label = name_gen('if_end')
         return [CMPLInstr(None, [Const(0), test]),
@@ -29,7 +29,5 @@ class RemoveStructuredControl(Visitor):
                 [else_] + \
                 [Label(end_label)]
 
-    def default(self, n):
-        return [n]
-
-    
+    else:
+        return [ast]

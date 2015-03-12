@@ -125,6 +125,7 @@ class flattenVisit(Visitor):
         return (Name(tmp), ss + [make_assign(tmp, rhs)])
 
     def visitLet(self, n, constOrName):
+        # print n.rhs
         (rhs_result, rhs_ss) = self.dispatch(n.rhs, False)
         (body_result, body_ss) = self.dispatch(n.body, True)
         return (body_result, rhs_ss + [make_assign(n.var, rhs_result)] + body_ss)

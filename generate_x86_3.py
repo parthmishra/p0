@@ -43,9 +43,6 @@ class GenX86Visitor3(GenX86Visitor2):
         leave
         ret''' % self.dispatch(n.value)
 
-
-    # def visitStackLoc(self, n):
-    #     return '%d(%%ebp)' % n.offset
         
     def visitFunName(self, n):
         return '$%s' % fun_prefix + n.name

@@ -8,12 +8,13 @@ import sys
 import compiler
 import re
 
-##Helper functions prof Chang showed us in class that I found useful:
+##Helper function prof Chang showed us in class that I found useful.
+## It finds whether or not an expression e is "true-like"
 def is_true(e):
     if True:
-        return IfExp(Compare(GetTag(e), [('==', Const(tag['int']))]),
+        return IfExp(Compare(GetTag(e), [('==', Const(0))]),
                      Compare(Const(0), [('!=', ProjectTo('int', e))]),
-                     IfExp(Compare(GetTag(e), [('==', Const(tag['bool']))]),
+                     IfExp(Compare(GetTag(e), [('==', Const(1))]),
                            Compare(Const(0),
                                    [('!=', ProjectTo('int', e))]),
                            CallFunc(Name('is_true'), [e])))
@@ -24,6 +25,7 @@ def is_true(e):
 def constOrName(expr):
     return isinstance(expr, Name) or isinstance(expr, Const)
 
+## So I don't have to type out let x in whatever = whatever all the time
 def letify(expr, k):
     if constOrName(expr):
         return k(expr)
@@ -76,10 +78,10 @@ def explicate(ast):
 		rExpr = explicate(ast.right)
 
 		def result(l, r):
-			return IfExp(Compare(GetTag(l), [('==', Const(tag['int']))]),
+			return IfExp(Compare(GetTag(l), [('==', Const(0))]),
 						InjectFrom('int', Add((ProjectTo('int', l), \
 											ProjectTo('int', r)))),
-						IfExp(Compare(GetTag(l), [('==', Const(tag['bool']))]),
+						IfExp(Compare(GetTag(l), [('==', Const(1))]),
 								InjectFrom('int', Add((ProjectTo('int', l), \
 											ProjectTo('int', r)))),
 							InjectFrom('big', CallFunc(Name('add'), [ProjectTo('big', l), ProjectTo('big', r)]))))
@@ -102,7 +104,10 @@ def explicate(ast):
 
 	elif isinstance(ast, Dict):
 		items = [(explicate(k), explicate(v)) for (k, v) in ast.items]
-		dName = name_gen("dict")  ##change this
+		# print items
+		# for item in items:
+			# print item
+		dName = name_gen("dict")  
 		dictElements = Name(dName)
 		for (k, v) in reversed(items):
 			elementName = name_gen("_")
@@ -143,10 +148,10 @@ def explicate(ast):
 		else:
 			op2fun = {'==':'equal', '!=':'not_equal'}
 			def result(l, r):
-				return IfExp(Compare(GetTag(l), [('==', Const(tag['int']))]),
+				return IfExp(Compare(GetTag(l), [('==', Const(0))]),
 								InjectFrom('bool', Compare(ProjectTo('int', l), \
 															[(op, ProjectTo('int', r))])),
-								IfExp(Compare(GetTag(l), [('==', Const(tag['bool']))]),
+								IfExp(Compare(GetTag(l), [('==', Const(1))]),
 										InjectFrom('bool', Compare(ProjectTo('int', l),
 															[(op, ProjectTo('int', r))])),
 										InjectFrom('bool', CallFunc(Name(op2fun[op]), [ProjectTo('big', l), ProjectTo('big', r)]))))

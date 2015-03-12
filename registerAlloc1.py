@@ -43,14 +43,13 @@ def choose_color(v, color, graphs,spill_this_one):
     global move_bias_reg
     global move_bias_stack
     
-    if debug:
-        print 'coloring ' + v
+    #print 'coloring ' + v
     used_colors = set([color[u] for u in graphs.interferes_with(v) \
                        if u in color]) 
     if spill_this_one:
         used_colors |=  set([0,1,2,3,4,5,6])
-    if debug:
-        print 'trying to pick move-related color'
+
+    #print 'trying to pick move-related color'
 
     # try to pick the same register as a move-related variable
     move_rel_reg = [color[u] for u in graphs.move_related(v) \
@@ -60,21 +59,18 @@ def choose_color(v, color, graphs,spill_this_one):
         move_bias_reg += 1
         return min(move_rel_reg)
 
-    if debug:
-        print 'trying to pick unused register'
+    #print 'trying to pick unused register'
 
     # try to pick an unused register
     unused_registers = [c for c in range(len(reserved_registers), \
                                          len(registers)) \
                         if not (c in used_colors)]
-    if debug:
-        print "unused_registers = " + repr(unused_registers)
+    #print "unused_registers = " + repr(unused_registers)
     #this just gets a list of the unused registers as integers
     if 0 < len(unused_registers):
         return min(unused_registers)
 
-    if debug:
-        print 'trying to pick move-related stack location'
+    #print 'trying to pick move-related stack location'
 
     # try to pick the same color as a move-related variable
     move_rel_colors = [color[u] for u in graphs.move_related(v) \
@@ -83,8 +79,7 @@ def choose_color(v, color, graphs,spill_this_one):
         move_bias_stack += 1
         return min(move_rel_colors)
 
-    if debug:
-        print 'pick stack location'
+    #print 'pick stack location'
 
     # pick lowest saturation 
     lowest = len(reserved_registers)
@@ -112,8 +107,7 @@ def avail_reg_then_unspill(u, v):
 def color_most_constrained_first(graphs, color):
     global spills, unspillable, num_unused, used_registers
 
-    if debug:
-        print 'starting color_most_constrained_first'
+    #print 'starting color_most_constrained_first'
     
     for v in graphs.vertices():
         used_registers[v] = set([])
@@ -168,7 +162,7 @@ def decide_which_to_spill(g,n):
     global unspillable
     nodes_to_spill = n - set(unspillable[0])
     if len(nodes_to_spill) == 0:
-        print "we can only spill an unspillable...."
+        print "Don't spill unspillable..."
         exit(0)
     for v in nodes_to_spill:
         return [v]
@@ -178,15 +172,7 @@ def color_graph2(g,n,coloring): #should take g (edges) and nodes n and coloring 
     #this does post facto spill analysis
     #n should be the set of nodes that need coloring
     # g for us just the inter graph
-    '''
-    if n = {} then return {}; end if;
-    if not (\exists node in n | num neighbors(node,g)< num colors
-            then return OMEGA; end if ;
-    coloring = color_graph({edige \in g | node \notin edge },n-{node})
-    if coloring = OMEGA then return OMEGA ; end if;
-    coloring(node) = arb(colors - {coloring(x): x \in neighbors(node,g)});
-    return coloring;
-    '''
+   
     if len(n) == 0:
         return coloring
     
@@ -216,15 +202,7 @@ def color_graph1(g,n,coloring):
 
     #n should be the set of nodes that need coloring
     # g for us just the inter graph
-    '''
-    if n = {} then return {}; end if;
-    if not (\exists node in n | num neighbors(node,g)< num colors
-            then return OMEGA; end if ;
-    coloring = color_graph({edige \in g | node \notin edge },n-{node})
-    if coloring = OMEGA then return OMEGA ; end if;
-    coloring(node) = arb(colors - {coloring(x): x \in neighbors(node,g)});
-    return coloring;
-    '''
+
     if len(n) == 0:
         return coloring
     
@@ -424,22 +402,21 @@ def colorer(graphs,color):
     color = color_graph1(graphs,set(graphs.vertices())-set(reserved_registers)-set(registers),color)
     return color
 
-
-
 def position(x, ls):
     for i in range(0, len(ls)):
         if x == ls[i]:
             return i
     raise Exception('%s not in list' % repr(x))
+
+
 class RegisterAlloc:
+
+    def liveness(self):
+        return ModifyLiveVisitor()
 
     def build_interference(self, all_registers):
         return BuildInterferenceVisitor(all_registers)
 
-    def liveness(self):
-        return ModifyLiveVisitor()
-    def coalesce(self):
-        return CoalesceVisitor()
     def intro_spill_code(self, color, instrs):
         return IntroSpillCode(color).preorder(instrs)
 
@@ -468,25 +445,22 @@ class RegisterAlloc:
             if debug:
                 print 'register allocation loop ' + repr(k)
             spilled[0] = False
-            if debug:
-                print 'liveness'
+            #print 'liveness'
             live_vis = self.liveness()
             live_vis.preorder(instrs)
-            if debug:
-                print 'building interference'
+
+            #print 'building interference'
+
             graphs = self.build_interference(registers + reserved_registers)
             graphs.preorder(instrs)
             spills = 0
             #This is the only actual part that uses the coloring portion
-            #I think all coloring can happen here by saying color2 = new_method(graphs,color)
-            #color = color_most_constrained_first(graphs, color)
             #print 'starting coloring'
+            ##Use the colors here
             color = colorer(graphs,color)
             #print color
             #print 'finished coloring'
 
-            if debug:
-                print 'finished coloring'
             if debug:
                 itf_file = splitext(filename)[0] + '-' + repr(k) + '.dot'
                 graphs.print_interference(itf_file, graphs.vertices(), color, real_color, len(reserved_registers) + len(registers))
@@ -506,6 +480,6 @@ class RegisterAlloc:
         for v in color.keys():
             if not is_reg(color[v]):
                 total_spilled +=1
-        print "total_spilled=", total_spilled , "k=" ,k
+        #print "total_spilled=", total_spilled , "k=" ,k
         instrs =  self.assign_registers(color, instrs)
         return instrs

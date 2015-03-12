@@ -23,28 +23,28 @@ inputFile = sys.argv[1]
 ast = compiler.parseFile(inputFile)
 # print ast
 # print ''
-# ast = explicateVisit().preorder(ast)
+
 ast = explicate(ast)
 # print ast
 # print ''
 # print PrintASTVisitor2().preorder(ast)
 
-# flat=flattener(ast, False)
+flat=flattener(ast, False)
 # print "In Compile = "
 # print flat
 # print ''
 
-flat=flattenVisit().preorder(ast)
+# flat=flattenVisit().preorder(ast)
 # print flat
 
-# ast=select(flat)
 # print ast
 instr = SelectVisit3().preorder(flat)
 # print instr
 # print ''
 # print ''
-for item in instr:
-	PrintVisitor3().preorder(item)
+
+# for item in instr:
+# 	print PrintVisitor3().preorder(item)
 
 
 latest=[]
@@ -54,11 +54,10 @@ for inst in instr:
 instr = latest
 
 for item in instr:
-	item.code = RemoveStructuredControl().preorder(item.code)
+    item.code = RemoveStructuredControl(item.code)
 
-for item in instr:
-	# print PrintVisitor3().preorder(item)
-    PrintVisitor3().preorder(item)
+# for item in instr:
+# 	print PrintVisitor3().preorder(item)
 
 x86 = GenX86Visitor3().preorder(Stmt(instr))
 
